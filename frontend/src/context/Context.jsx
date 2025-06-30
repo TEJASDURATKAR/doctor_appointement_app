@@ -27,39 +27,29 @@ const AppContextProvider = ({ children }) => {
     }
   };
 
- const loadUserProfileData = async () => {
+const loadUserProfileData = async () => {
   try {
+    const token = localStorage.getItem("token");
     const { data } = await axios.get(`${backendUrl}/api/user/profile`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     });
 
     if (data.success) {
       const user = data.user;
 
-      // Parse the address string safely
-      let parsedAddress = { line1: "", line2: "" };
-      try {
-        parsedAddress = user.address ? JSON.parse(user.address) : parsedAddress;
-      } catch (parseError) {
-        console.warn("Failed to parse address JSON:", parseError);
-      }
-
-      console.log(parsedAddress.line1, parsedAddress.line2);
-
-      setUserData({
-        ...user,
-        address: parsedAddress,
-      });
+      // ✅ No need to parse address
+      setUserData(user);
     } else {
       setUserData(null);
     }
   } catch (error) {
-    console.error("Error loading user profile data:", error);
+    console.error("❌ Error loading user profile data:", error);
     setUserData(null);
   }
 };
+
+
+
 
 
   useEffect(() => {

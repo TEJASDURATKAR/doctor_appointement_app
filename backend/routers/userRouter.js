@@ -17,7 +17,7 @@ router.post("/login", loginUser);
 
 // Protected Routes
 router.get("/profile", authUser, getProfile);
-router.post("/profile", authUser, upload.single("image"), updateProfile);
+router.put("/profile", authUser, upload.single("image"),authUser, updateProfile);
 
 
 export default router;

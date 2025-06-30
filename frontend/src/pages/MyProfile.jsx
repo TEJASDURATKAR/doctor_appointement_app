@@ -1,25 +1,22 @@
 import React, { useContext, useEffect, useState } from "react";
 import { AppContext } from "../context/Context";
+import axios from "axios";
 
 const MyProfile = () => {
-  const { userData, loadUserProfileData } = useContext(AppContext);
-  console.log('userDATA',userData)
+  const { userData, loadUserProfileData, setUserData, backendUrl } = useContext(AppContext);
   const [isEdit, setIsEdit] = useState(false);
   const [tempData, setTempData] = useState(null);
 
-  // Sync tempData whenever userData changes
+  useEffect(() => {
+    loadUserProfileData();
+  }, []);
+
   useEffect(() => {
     setTempData(userData);
   }, [userData]);
 
-  // Show loading if userData not loaded yet
-  if (!userData) {
-    return <div className="text-center p-6">Loading profile data...</div>;
-  }
-
   const handleChange = (e) => {
     const { name, value } = e.target;
-
     if (name.startsWith("address.")) {
       const field = name.split(".")[1];
       setTempData((prev) => ({
@@ -31,10 +28,27 @@ const MyProfile = () => {
     }
   };
 
-  const handleSave = () => {
-    // You might want to add an API call here to save updated profile to backend!
-    setUserData(tempData); // Update context state
-    setIsEdit(false);
+  const handleSave = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const updatedUser = {
+        ...tempData,
+        address: JSON.stringify(tempData.address),
+      };
+
+      const res = await axios.put(`${backendUrl}/api/user/profile`, updatedUser, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.data.success) {
+        setUserData(tempData);
+        setIsEdit(false);
+      } else {
+        console.error("Failed to update profile:", res.data.message);
+      }
+    } catch (err) {
+      console.error("Error updating profile:", err);
+    }
   };
 
   const handleCancel = () => {
@@ -42,152 +56,126 @@ const MyProfile = () => {
     setIsEdit(false);
   };
 
+  if (!userData) {
+    return <div className="text-center py-10 text-gray-500">Loading profile...</div>;
+  }
+
   return (
-    <div className="max-w-md mx-auto border-2 mt-5 bg-white rounded-lg shadow-lg p-6">
-      <h1 className="text-2xl font-semibold mb-4 underline text-center">
-        My Profile
-      </h1>
-      <div className="flex flex-col items-center">
+    <div className="max-w-xl mx-auto mt-10 bg-white shadow-lg rounded-xl p-6">
+      <h2 className="text-3xl font-bold text-center mb-6 text-violet-700">My Profile</h2>
+
+      <div className="flex flex-col items-center mb-6">
         <img
           src={userData.image || "/default-profile.png"}
           alt="Profile"
-          className="w-34 h-34 rounded-full border-2 border-gray-300 mb-4"
+          className="w-32 h-32 rounded-full border-2 border-violet-500 object-cover"
         />
-        {/* Editable Fields */}
-        <div className="w-full">
-          <div className="flex flex-col items-center mb-4">
-            {isEdit ? (
-              <input
-                type="text"
-                name="name"
-                value={tempData?.name || ""}
-                onChange={handleChange}
-                className="border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 text-center"
-              />
-            ) : (
-              <p className="text-2xl font-semibold text-center">{userData.name}</p>
-            )}
-          </div>
+      </div>
 
-          <h1 className="text-1xl font-semibold mb-4 underline text-center">
-            Contact Information
-          </h1>
-          <div className="flex flex-col mb-4">
-            <label className="text-gray-500 mb-1">Phone</label>
-            {isEdit ? (
-              <input
-                type="text"
-                name="phone"
-                value={tempData?.phone || ""}
-                onChange={handleChange}
-                className="border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
-              />
-            ) : (
-              <p className="font-medium">{userData.phone}</p>
-            )}
-          </div>
-
-          <div className="flex flex-col mb-4">
-            <label className="text-gray-500 mb-1">Address Line 1</label>
-            {isEdit ? (
-              <input
-                type="text"
-                name="address.line1"
-                value={tempData?.address?.line1 || ""}
-                onChange={handleChange}
-                className="border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
-              />
-            ) : (
-              <p className="font-medium">{userData.address?.line1}</p>
-            )}
-          </div>
-
-          <div className="flex flex-col mb-4">
-            <label className="text-gray-500 mb-1">Address Line 2</label>
-            {isEdit ? (
-              <input
-                type="text"
-                name="address.line2"
-                value={tempData?.address?.line2 || ""}
-                onChange={handleChange}
-                className="border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
-              />
-            ) : (
-              <p className="font-medium">{userData.address?.line2}</p>
-            )}
-          </div>
-
-          <div className="flex flex-col mb-4">
-            <label className="text-gray-500 mb-1">Email</label>
-            {isEdit ? (
-              <input
-                type="email"
-                name="email"
-                value={tempData?.email || ""}
-                onChange={handleChange}
-                className="border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
-              />
-            ) : (
-              <p className="font-medium">{userData.email}</p>
-            )}
-          </div>
-
-          <h1 className="text-1xl font-semibold mb-4 underline text-center">
-            Basic Information
-          </h1>
-          <div className="flex flex-col mb-4">
-            <label className="text-gray-500 mb-1">Gender</label>
-            {isEdit ? (
-              <select
-                name="gender"
-                value={tempData?.gender || ""}
-                onChange={handleChange}
-                className="border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Select Gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-              </select>
-            ) : (
-              <p className="font-medium">{userData.gender}</p>
-            )}
-          </div>
-
-          <div className="flex flex-col mb-4">
-            <label className="text-gray-500 mb-1">Date of Birth</label>
-            {isEdit ? (
-              <input
-                type="date"
-                name="dob"
-                value={tempData?.dob || ""}
-                onChange={handleChange}
-                className="border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
-              />
-            ) : (
-              <p className="font-medium">{userData.dob}</p>
-            )}
-          </div>
-
+      <div className="grid grid-cols-1 gap-4">
+        {/* NAME */}
+        <div>
+          <label className="text-sm text-gray-600">Full Name</label>
           {isEdit ? (
-            <div className="flex gap-4">
+            <input name="name" value={tempData?.name || ""} onChange={handleChange}
+              className="w-full border px-3 py-2 rounded-md" />
+          ) : (
+            <p className="text-lg font-medium">{userData.name}</p>
+          )}
+        </div>
+
+        {/* PHONE */}
+        <div>
+          <label className="text-sm text-gray-600">Phone</label>
+          {isEdit ? (
+            <input name="phone" value={tempData?.phone || ""} onChange={handleChange}
+              className="w-full border px-3 py-2 rounded-md" />
+          ) : (
+            <p>{userData.phone}</p>
+          )}
+        </div>
+
+        {/* EMAIL */}
+        <div>
+          <label className="text-sm text-gray-600">Email</label>
+          {isEdit ? (
+            <input type="email" name="email" value={tempData?.email || ""} onChange={handleChange}
+              className="w-full border px-3 py-2 rounded-md" />
+          ) : (
+            <p>{userData.email}</p>
+          )}
+        </div>
+
+        {/* ADDRESS LINE 1 */}
+        <div>
+          <label className="text-sm text-gray-600">Address Line 1</label>
+          {isEdit ? (
+            <input name="address.line1" value={tempData?.address?.line1 || ""} onChange={handleChange}
+              className="w-full border px-3 py-2 rounded-md" />
+          ) : (
+            <p>{userData.address?.line1}</p>
+          )}
+        </div>
+
+        {/* ADDRESS LINE 2 */}
+        <div>
+          <label className="text-sm text-gray-600">Address Line 2</label>
+          {isEdit ? (
+            <input name="address.line2" value={tempData?.address?.line2 || ""} onChange={handleChange}
+              className="w-full border px-3 py-2 rounded-md" />
+          ) : (
+            <p>{userData.address?.line2}</p>
+          )}
+        </div>
+
+        {/* GENDER */}
+        <div>
+          <label className="text-sm text-gray-600">Gender</label>
+          {isEdit ? (
+            <select name="gender" value={tempData?.gender || ""} onChange={handleChange}
+              className="w-full border px-3 py-2 rounded-md">
+              <option value="">Select Gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          ) : (
+            <p>{userData.gender}</p>
+          )}
+        </div>
+
+        {/* DOB */}
+        <div>
+          <label className="text-sm text-gray-600">Date of Birth</label>
+          {isEdit ? (
+            <input type="date" name="dob" value={tempData?.dob || ""} onChange={handleChange}
+              className="w-full border px-3 py-2 rounded-md" />
+          ) : (
+            <p>{userData.dob}</p>
+          )}
+        </div>
+
+        {/* ACTIONS */}
+        <div className="flex gap-4 mt-4">
+          {isEdit ? (
+            <>
               <button
                 onClick={handleSave}
-                className="bg-violet-600 text-white px-4 py-2 rounded-3xl hover:bg-violet-900 w-full transition duration-200"
+                className="w-full bg-violet-600 text-white py-2 rounded-md hover:bg-violet-700"
               >
-                Save Information
+                Save
               </button>
               <button
                 onClick={handleCancel}
-                className="bg-gray-400 text-white px-4 py-2 rounded-3xl hover:bg-gray-500 w-full transition duration-200"
+                className="w-full bg-gray-400 text-white py-2 rounded-md hover:bg-gray-500"
               >
                 Cancel
               </button>
-            </div>
+            </>
           ) : (
             <button
               onClick={() => setIsEdit(true)}
-              className="bg-violet-600 text-white px-4 py-2 rounded-3xl hover:bg-violet-900 w-full transition duration-200"
+              className="w-full bg-violet-600 text-white py-2 rounded-md hover:bg-violet-700"
             >
               Edit
             </button>

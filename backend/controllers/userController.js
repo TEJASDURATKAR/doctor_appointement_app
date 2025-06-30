@@ -126,8 +126,16 @@ export const getProfile = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const userData = await User.findById(userId).select('-password');
-    res.json({success:true,userData})
+    const user = await User.findById(userId).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    res.json({
+      success: true,
+      user, // 🔥 send actual user data from DB
+    });
 
   } catch (error) {
     console.error("Error fetching user profile:", error);
@@ -144,32 +152,30 @@ export const updateProfile = async (req, res) => {
     const { userId, name, phone, address, dob, gender } = req.body;
     const imageFile = req.file;
 
-    if (!name || !dob || !gender || !phone) {
-      return res.json({ success: false, message: 'Data Missing' });
+    if (!userId || !name || !dob || !gender || !phone) {
+      return res.status(400).json({ success: false, message: 'Required data missing' });
     }
 
-    // Update user info
-    await User.findByIdAndUpdate(userId, {
+    const updatedData = {
       name,
       phone,
-      address: JSON.parse(address),
+      address: typeof address === 'string' ? JSON.parse(address) : address,
       dob,
-      gender
-    });
+      gender,
+    };
 
     // Upload image if provided
     if (imageFile) {
-
-      const imageUploade = await cloudinary.uploader.upload(imageFile.path,{resource_type:'imae'})
-      const imageUrl = imageUploade.secure_url
-
-      await User.findByIdAndUpdate(userId,{image:imageUrl})
+      const imageUpload = await cloudinary.uploader.upload(imageFile.path, { resource_type: 'image' });
+      updatedData.image = imageUpload.secure_url;
     }
+
+    await User.findByIdAndUpdate(userId, updatedData);
 
     res.json({ success: true, message: 'Profile updated' });
 
   } catch (error) {
-    console.error("Error updating profile:", error);
+    console.error("Error updating profile:", error.message, error.stack);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
