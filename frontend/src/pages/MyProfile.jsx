@@ -1,10 +1,12 @@
 import React, { useContext, useEffect, useState } from "react";
 import { AppContext } from "../context/Context";
 import axios from "axios";
+import { toast } from "react-toastify";
 
 const MyProfile = () => {
   const { userData, loadUserProfileData, setUserData, backendUrl } = useContext(AppContext);
   const [isEdit, setIsEdit] = useState(false);
+  const [image, setImage] = useState(null);
   const [tempData, setTempData] = useState(null);
 
   useEffect(() => {
@@ -28,26 +30,37 @@ const MyProfile = () => {
     }
   };
 
-  const handleSave = async () => {
+  const updateUserProfileData = async () => {
     try {
       const token = localStorage.getItem("token");
-      const updatedUser = {
-        ...tempData,
-        address: JSON.stringify(tempData.address),
-      };
+      const formData = new FormData();
 
-      const res = await axios.put(`${backendUrl}/api/user/profile`, updatedUser, {
-        headers: { Authorization: `Bearer ${token}` },
+      formData.append("name", tempData.name);
+      formData.append("phone", tempData.phone);
+      formData.append("address", JSON.stringify(tempData.address)); // Ensure it's a string
+      formData.append("gender", tempData.gender);
+      formData.append("dob", tempData.dob);
+
+      if (image) {
+        formData.append("image", image);
+      }
+
+      const { data } = await axios.put(`${backendUrl}/api/user/profile`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
 
-      if (res.data.success) {
-        setUserData(tempData);
+      if (data.success) {
+        toast.success("Profile updated successfully!");
+        loadUserProfileData(); // Refresh the latest profile
         setIsEdit(false);
       } else {
-        console.error("Failed to update profile:", res.data.message);
+        toast.error(data.message || "Failed to update profile.");
       }
-    } catch (err) {
-      console.error("Error updating profile:", err);
+    } catch (error) {
+      console.error("Update error:", error);
+      toast.error("Something went wrong while updating your profile.");
     }
   };
 
@@ -61,24 +74,49 @@ const MyProfile = () => {
   }
 
   return (
-    <div className="max-w-xl mx-auto mt-10 bg-white shadow-lg rounded-xl p-6">
+    <div className="max-w-xl mx-auto mt-10 bg-white shadow-lg rounded-xl border m-2 p-6">
       <h2 className="text-3xl font-bold text-center mb-6 text-violet-700">My Profile</h2>
 
       <div className="flex flex-col items-center mb-6">
-        <img
-          src={userData.image || "/default-profile.png"}
-          alt="Profile"
-          className="w-32 h-32 rounded-full border-2 border-violet-500 object-cover"
-        />
+        {isEdit ? (
+          <label htmlFor="image" className="cursor-pointer relative">
+            <img
+              src={
+                image
+                  ? URL.createObjectURL(image)
+                  : tempData?.image || "/default-profile.png"
+              }
+              alt="Profile"
+              className="w-32 h-32 rounded-full border-2 border-violet-500 object-cover"
+            />
+            <input
+              type="file"
+              id="image"
+              hidden
+              accept="image/*"
+              onChange={(e) => setImage(e.target.files[0])}
+            />
+          </label>
+        ) : (
+          <img
+            src={userData.image || "/default-profile.png"}
+            alt="Profile"
+            className="w-32 h-32 rounded-full border-2 border-violet-500 object-cover"
+          />
+        )}
       </div>
-
-      <div className="grid grid-cols-1 gap-4">
+<hr />
+      <div className="grid mt-2 grid-cols-1 gap-4">
         {/* NAME */}
         <div>
           <label className="text-sm text-gray-600">Full Name</label>
           {isEdit ? (
-            <input name="name" value={tempData?.name || ""} onChange={handleChange}
-              className="w-full border px-3 py-2 rounded-md" />
+            <input
+              name="name"
+              value={tempData?.name || ""}
+              onChange={handleChange}
+              className="w-full border px-3 py-2 rounded-md"
+            />
           ) : (
             <p className="text-lg font-medium">{userData.name}</p>
           )}
@@ -88,8 +126,12 @@ const MyProfile = () => {
         <div>
           <label className="text-sm text-gray-600">Phone</label>
           {isEdit ? (
-            <input name="phone" value={tempData?.phone || ""} onChange={handleChange}
-              className="w-full border px-3 py-2 rounded-md" />
+            <input
+              name="phone"
+              value={tempData?.phone || ""}
+              onChange={handleChange}
+              className="w-full border px-3 py-2 rounded-md"
+            />
           ) : (
             <p>{userData.phone}</p>
           )}
@@ -99,8 +141,14 @@ const MyProfile = () => {
         <div>
           <label className="text-sm text-gray-600">Email</label>
           {isEdit ? (
-            <input type="email" name="email" value={tempData?.email || ""} onChange={handleChange}
-              className="w-full border px-3 py-2 rounded-md" />
+            <input
+              type="email"
+              name="email"
+              value={tempData?.email || ""}
+              onChange={handleChange}
+              className="w-full border px-3 py-2 rounded-md"
+              disabled
+            />
           ) : (
             <p>{userData.email}</p>
           )}
@@ -110,8 +158,12 @@ const MyProfile = () => {
         <div>
           <label className="text-sm text-gray-600">Address Line 1</label>
           {isEdit ? (
-            <input name="address.line1" value={tempData?.address?.line1 || ""} onChange={handleChange}
-              className="w-full border px-3 py-2 rounded-md" />
+            <input
+              name="address.line1"
+              value={tempData?.address?.line1 || ""}
+              onChange={handleChange}
+              className="w-full border px-3 py-2 rounded-md"
+            />
           ) : (
             <p>{userData.address?.line1}</p>
           )}
@@ -121,8 +173,12 @@ const MyProfile = () => {
         <div>
           <label className="text-sm text-gray-600">Address Line 2</label>
           {isEdit ? (
-            <input name="address.line2" value={tempData?.address?.line2 || ""} onChange={handleChange}
-              className="w-full border px-3 py-2 rounded-md" />
+            <input
+              name="address.line2"
+              value={tempData?.address?.line2 || ""}
+              onChange={handleChange}
+              className="w-full border px-3 py-2 rounded-md"
+            />
           ) : (
             <p>{userData.address?.line2}</p>
           )}
@@ -132,8 +188,12 @@ const MyProfile = () => {
         <div>
           <label className="text-sm text-gray-600">Gender</label>
           {isEdit ? (
-            <select name="gender" value={tempData?.gender || ""} onChange={handleChange}
-              className="w-full border px-3 py-2 rounded-md">
+            <select
+              name="gender"
+              value={tempData?.gender || ""}
+              onChange={handleChange}
+              className="w-full border px-3 py-2 rounded-md"
+            >
               <option value="">Select Gender</option>
               <option value="Male">Male</option>
               <option value="Female">Female</option>
@@ -148,8 +208,13 @@ const MyProfile = () => {
         <div>
           <label className="text-sm text-gray-600">Date of Birth</label>
           {isEdit ? (
-            <input type="date" name="dob" value={tempData?.dob || ""} onChange={handleChange}
-              className="w-full border px-3 py-2 rounded-md" />
+            <input
+              type="date"
+              name="dob"
+              value={tempData?.dob || ""}
+              onChange={handleChange}
+              className="w-full border px-3 py-2 rounded-md"
+            />
           ) : (
             <p>{userData.dob}</p>
           )}
@@ -160,7 +225,7 @@ const MyProfile = () => {
           {isEdit ? (
             <>
               <button
-                onClick={handleSave}
+                onClick={updateUserProfileData}
                 className="w-full bg-violet-600 text-white py-2 rounded-md hover:bg-violet-700"
               >
                 Save

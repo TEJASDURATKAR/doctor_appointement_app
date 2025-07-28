@@ -5,9 +5,10 @@ import { toast } from "react-toastify";
 export const AdminContext = createContext();
 
 const AdminContextProvider = (props) => {
-  const [aToken, setAToken] = useState(() => localStorage.getItem("aToken") || "");
+  const [aToken, setAToken] = useState(localStorage.getItem("aToken")?localStorage.getItem('aToken'):'');
   const [doctors, setDoctors] = useState([]);
   const backendUrl = import.meta.env.VITE_BACKENDURL;
+  const [dashData,setDashData]= useState(false);
 
   // Fetch all doctors
   const getAllDoctors = async () => {
@@ -61,6 +62,46 @@ const AdminContextProvider = (props) => {
     }
   };
 
+const getAllAppointments = async () => {
+  if (!aToken) {
+    toast.warn("Token missing. Please login again.");
+    return [];
+  }
+
+  try {
+    const res = await axios.get(`${backendUrl}/api/admin/appointments`, {
+      headers: { Authorization: `Bearer ${aToken}` },
+    });
+
+    return res.data?.appointments || [];
+  } catch (error) {
+    console.error("Error fetching appointments:", error);
+    const errMsg = error.response?.data?.message || error.message || "Failed to fetch appointments";
+    toast.error(errMsg);
+    return [];
+  }
+};
+
+const getDashData = async () => {
+  try {
+    const { data } = await axios.get(`${backendUrl}/api/admin/dashboard`, {
+      headers: {
+        Authorization: `Bearer ${aToken}`,
+      },
+    });
+
+    if (data.success) {
+      console.log("getDashData",data.dashData)
+      setDashData(data.dashData);
+    } else {
+      toast.error(data.message || "Failed to load dashboard data");
+    }
+  } catch (error) {
+    console.error("Dashboard Fetch Error:", error);
+    toast.error(error.response?.data?.message || error.message);
+  }
+};
+
   // Sync token with localStorage
   useEffect(() => {
     if (aToken) {
@@ -77,6 +118,9 @@ const AdminContextProvider = (props) => {
     getAllDoctors,
     doctors,
     changeAvailability, // ✅ Fixed spelling
+    getAllAppointments, 
+    dashData,
+    getDashData
   };
 
   return <AdminContext.Provider value={value}>{props.children}</AdminContext.Provider>;

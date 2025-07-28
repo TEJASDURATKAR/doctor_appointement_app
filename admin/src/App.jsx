@@ -9,19 +9,31 @@ import DashBoard from "./pages/admin/DashBoard";
 import AllAppointements from "./pages/admin/AllAppointements";
 import AddDoctor from "./pages/admin/AddDoctor";
 import DoctorsList from "./pages/admin/DoctorsList";
+import { DoctorContext } from "./context/DoctorContext";
+import DoctorProfile from "./pages/doctor/DoctorProfile";
+import DoctorDashBoard from "./pages/doctor/DoctorDashBoard";
+import DoctorAppointment from "./pages/doctor/DoctorAppointment";
 
 const App = () => {
   const { aToken } = useContext(AdminContext);
+  const { dToken } = useContext(DoctorContext);
 
   return (
     <>
-      {aToken ? (
+      {aToken || dToken ? (
         <Routes>
+          {/* Admin Routes */}
           <Route path="/" element={<Layout />}>
             <Route path="dashboard" element={<DashBoard />} />
             <Route path="add-doctor" element={<AddDoctor />} />
             <Route path="all-appointements" element={<AllAppointements />} />
             <Route path="doctor-list" element={<DoctorsList />} />
+
+            {/* Doctor Routes */}
+
+            <Route path="doctor-profile" element={<DoctorProfile />} />
+            <Route path="doctor-dashboard" element={<DoctorDashBoard />} />
+            <Route path="doctor-appointments" element={<DoctorAppointment />} />
           </Route>
         </Routes>
       ) : (

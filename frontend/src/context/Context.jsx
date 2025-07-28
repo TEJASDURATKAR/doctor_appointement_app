@@ -27,30 +27,26 @@ const AppContextProvider = ({ children }) => {
     }
   };
 
-const loadUserProfileData = async () => {
-  try {
-    const token = localStorage.getItem("token");
-    const { data } = await axios.get(`${backendUrl}/api/user/profile`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+  const loadUserProfileData = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const { data } = await axios.get(`${backendUrl}/api/user/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    if (data.success) {
-      const user = data.user;
+      if (data.success) {
+        const user = data.user;
 
-      // ✅ No need to parse address
-      setUserData(user);
-    } else {
+        // ✅ No need to parse address
+        setUserData(user);
+      } else {
+        setUserData(null);
+      }
+    } catch (error) {
+      console.error("❌ Error loading user profile data:", error);
       setUserData(null);
     }
-  } catch (error) {
-    console.error("❌ Error loading user profile data:", error);
-    setUserData(null);
-  }
-};
-
-
-
-
+  };
 
   useEffect(() => {
     if (token) {
@@ -78,7 +74,7 @@ const loadUserProfileData = async () => {
     setToken: updateToken,
     backendUrl,
     userData,
-    setUserData,          // ✅ Provide setter to update userData
+    setUserData, // ✅ Provide setter to update userData
     loadUserProfileData,
   };
 

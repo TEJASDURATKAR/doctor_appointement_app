@@ -1,14 +1,15 @@
 import React, { useContext, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { AppContext } from "../context/Context";
 import RelatedDoctors from "../components/RelatedDoctors";
+import {toast} from 'react-toastify'
 
 const Appointement = () => {
   const { docId } = useParams();
-  const { doctors } = useContext(AppContext);
+  const { doctors,token,backendUrl,getDoctorsData } = useContext(AppContext);
   const [docInfo, setDocInfo] = useState(null);
   const dayOfWeek = ["SUN", "MON", "TUES", "WED", "THUS", "FRI", "SAT"];
-
+  const navigate = useNavigate();
   const [docSlots, setDocSlots] = useState([]);
   const [slotIndex, setSlotIndex] = useState(0);
   const [slotTime, setSlotTime] = useState("");
@@ -66,6 +67,58 @@ const Appointement = () => {
     // ✅ Batch state update to avoid multiple renders
     setDocSlots(slots);
   };
+
+
+
+  // 🔹 Book appointment
+  const bookAppointement = async () => {
+    if (!token) {
+      toast.warn("Login to book the Appointment");
+      return navigate("/login");
+    }
+
+    if (!slotTime) return toast.error("Please select a time slot");
+
+    const selectedSlot = docSlots[slotIndex]?.find((s) => s.time === slotTime);
+    if (!selectedSlot) return toast.error("Invalid slot selected");
+
+    try {
+      const res = await fetch(`${backendUrl}/api/user/book-appointment`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          docId: docId,
+          slotData: selectedSlot.dateTime,
+          slotTime: selectedSlot.time,
+        }),
+      });
+
+      const result = await res.json();
+      if (res.ok) {
+        toast.success("Appointment booked successfully!");
+
+        // ⛔ Remove slot from UI
+        const updatedSlots = [...docSlots];
+        updatedSlots[slotIndex] = updatedSlots[slotIndex].filter(
+          (slot) => slot.time !== slotTime
+        );
+
+        setDocSlots(updatedSlots);
+        setSlotTime("");
+        navigate("/my-appointenent");
+      } else {
+        toast.error(result.message || "Failed to book appointment");
+      }
+    } catch (err) {
+      toast.error("Something went wrong while booking");
+    }
+  };
+
+
+
 
   useEffect(() => {
     fetchDocInfo();
@@ -156,7 +209,7 @@ const Appointement = () => {
           ))}
         </div>
         <div className="justify-center">
-          <button className="mt-4 bg-violet-600 text-white px-6 py-2 rounded-2xl hover:bg-blue-700 transition duration-300">
+          <button onClick={bookAppointement} className="mt-4 bg-violet-600 text-white px-6 py-2 rounded-2xl hover:bg-blue-700 transition duration-300">
             Book Appointment
           </button>
         </div>

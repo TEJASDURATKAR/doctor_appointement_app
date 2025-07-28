@@ -3,6 +3,9 @@ import Doctor from "../models/doctorsModel.js"; // Ensure correct model path
 import { v2 as cloudinary } from "cloudinary";
 import jwt from "jsonwebtoken";
 import Admin from "../models/adminModel.js";
+import User from "../models/userModel.js";
+import Appointment from "../models/appointementModel.js";
+import AppointmentModel from "../models/appointementModel.js";
 
 
 export const addDoctor = async (req, res) => {
@@ -126,3 +129,72 @@ export const allDoctors = async (req, res) => {
 };
 
 
+export const appointmentsAdminn = async (req, res) => {
+  try {
+    const appointments = await Appointment.find()
+      .populate("userId", "fullName email")   // populate user info
+      .populate("docId", "name specialization") // populate doctor info
+      .sort({ createdAt: -1 }); // recent first
+
+    res.status(200).json({
+      success: true,
+      message: "All appointments fetched successfully",
+      appointments,
+    });
+  } catch (error) {
+    console.error("Error fetching appointments:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch appointments",
+    });
+  }
+};
+
+// API FOR APPOINTEMENT CANCETION
+export const appointmentCanale = async (req, res) => {
+  try {
+    const appointmentId = req.params.id;
+    const updated = await Appointment.findByIdAndUpdate(
+      appointmentId,
+      { cancelled: true },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Appointment not found" });
+    }
+
+    res.json({ message: "Appointment cancelled", appointment: updated });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+export const adminDashBoard = async (req, res) => {
+  try {
+    const doctors = await Doctor.find({});
+    const users = await User.find({});
+    
+    // Populate doctor and user fields
+    const appointments = await AppointmentModel.find({})
+      .sort({ slotData: -1 })
+      .limit(5)
+      .populate('docId', 'name image')     // Only fetch name & image
+      .populate('userId', 'name');         // Optional: if you want patient name
+
+    const dashData = {
+      doctors: doctors.length,
+      appointments: appointments.length,
+      patients: users.length,
+      latestAppointments: appointments,    // Already limited to 5 & populated
+    };
+
+    res.json({ success: true, dashData });
+  } catch (err) {
+    console.error("Dashboard Error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+;

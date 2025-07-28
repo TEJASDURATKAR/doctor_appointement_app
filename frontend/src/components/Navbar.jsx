@@ -9,7 +9,8 @@ const Navbar = () => {
   const location = useLocation();
   const [showMenu, setShowMenu] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
-  const { token, setToken } = useContext(AppContext); // ✅ Correct
+  const { token, setToken,userData } = useContext(AppContext); // ✅ Correct
+
 
   const dropdownRef = useRef(null);
 
@@ -79,30 +80,31 @@ const Navbar = () => {
 
       {/* Profile / Login button */}
       <div className="relative hidden md:flex" ref={dropdownRef}>
-        {token ? (
-          <div
-            className="flex items-center gap-2 cursor-pointer"
-            onClick={() => setShowMenu(!showMenu)}
-          >
-            <img
-              src="https://tse4.mm.bing.net/th?id=OIP.IGNf7GuQaCqz_RPq5wCkPgHaLH&pid=Api&P=0&h=220"
-              alt="Profile"
-              className="h-10 w-10 rounded-full"
-            />
-            <IoChevronDownSharp
-              className={`text-gray-500 transition-transform ${
-                showMenu ? "rotate-180" : ""
-              }`}
-            />
-          </div>
-        ) : (
-          <button
-            onClick={() => navigate("/login")}
-            className="px-4 py-2 bg-yellow-400 text-black rounded-lg hover:bg-yellow-500 transition"
-          >
-            Create Account
-          </button>
-        )}
+        {token && userData ? (
+  <div
+    className="flex items-center gap-2 cursor-pointer"
+    onClick={() => setShowMenu(!showMenu)}
+  >
+    <img
+      src={userData.image || "https://via.placeholder.com/150"}
+      alt="Profile"
+      className="h-10 w-10 rounded-full"
+    />
+    <IoChevronDownSharp
+      className={`text-gray-500 transition-transform ${
+        showMenu ? "rotate-180" : ""
+      }`}
+    />
+  </div>
+) : (
+  <button
+    onClick={() => navigate("/login")}
+    className="px-4 py-2 bg-yellow-400 text-black rounded-lg hover:bg-yellow-500 transition"
+  >
+    Create Account
+  </button>
+)}
+
 
         {showMenu && (
           <div className="absolute top-12 right-0 w-60 bg-white shadow-lg rounded-md border border-gray-200 z-10">

@@ -13,6 +13,8 @@ import MyAppointement from './pages/MyAppointement';
 import Appointement from './pages/Appointement';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import PaymentFailed from './pages/PaymentFailed';
+import PaymentSuccess from './pages/PaymentSuccess';
 
 const App = () => {
   return (
@@ -28,6 +30,8 @@ const App = () => {
         <Route path='/my-profile' element={<MyProfile />} />
         <Route path='/my-appointenent' element={<MyAppointement />} />
         <Route path='/appointment/:docId' element={<Appointement />} />
+        <Route path="/payment-success" element={<PaymentSuccess />} />
+        <Route path="/payment-failed" element={<PaymentFailed />} />
       </Routes>
       <Footer />
 

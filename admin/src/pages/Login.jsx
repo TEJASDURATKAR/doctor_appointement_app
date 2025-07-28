@@ -2,6 +2,7 @@ import React, { useContext, useState } from 'react';
 import { AdminContext } from '../context/AdminContext';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { DoctorContext } from '../context/DoctorContext';
 
 const Login = () => {
   const [state, setState] = useState('admin');
@@ -9,29 +10,37 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+   const { setDToken } = useContext(DoctorContext);
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    try {
-      const url =
-        state === 'admin'
-          ? `${backendUrl}/api/admin/login`
-          : `${backendUrl}/api/doctor/login`;
+  try {
+    const url =
+      state === 'admin'
+        ? `${backendUrl}/api/admin/login`
+        : `${backendUrl}/api/doctor/login`;
 
-      const response = await axios.post(url, { email, password });
+    const response = await axios.post(url, { email, password });
 
-      const token = response.data.token;
+    const token = response.data.token;
+
+    if (state === 'admin') {
       localStorage.setItem('aToken', token);
       setAToken(token);
-
-      toast.success(`${state.charAt(0).toUpperCase() + state.slice(1)} logged in successfully`);
-      console.log('Token:', token);
-    } catch (error) {
-      const errMsg = error.response?.data?.message || 'Login failed';
-      toast.error(errMsg);
-      console.error('Login failed:', errMsg);
+    } else {
+      localStorage.setItem('dToken', token);
+      setDToken(token);
     }
-  };
+
+    toast.success(`${state.charAt(0).toUpperCase() + state.slice(1)} logged in successfully`);
+    console.log('Token:', token);
+  } catch (error) {
+    const errMsg = error.response?.data?.message || 'Login failed';
+    toast.error(errMsg);
+    console.error('Login failed:', errMsg);
+  }
+};
 
   const toggleRole = () => {
     setState((prev) => (prev === 'admin' ? 'doctor' : 'admin'));
