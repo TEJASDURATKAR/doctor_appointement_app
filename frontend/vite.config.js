@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/api': 'http://localhost:8080',  // Forward all /api requests to backend
+      '/api': 'https://doctor-appointement-app-kntn.onrender.com',  // Forward all /api requests to backend
     },
   },
 })
