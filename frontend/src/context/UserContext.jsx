@@ -6,7 +6,7 @@ export const UserContext = createContext();
 const UserContextProvider = ({ children }) => {
   const [userData, setUserData] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("token") || "");
-  const backendUrl = "http://localhost:8080";
+  const backendUrl = import.meta.VITE_BACKENDURL;
 
   const loadUserProfileData = async () => {
     const storedToken = localStorage.getItem("token");
